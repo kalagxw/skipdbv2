@@ -657,6 +657,7 @@ static int client_run_command(EV_P_ skipd_client* client)
         p1 = "ok\n";
         client_send(EV_A_ client, p1, strlen(p1));
         ccrReturn(ctx, ccr_error_ok1);
+#if 0
     } else if(!strcmp(client->command, "delay")) {
         p1 = p2+1;
         p2 = strstr(p1, " ");
@@ -822,7 +823,7 @@ static int client_run_command(EV_P_ skipd_client* client)
         p1 = "ok\n";
         client_send(EV_A_ client, p1, strlen(p1));
         ccrReturn(ctx, ccr_error_ok1);
-
+#endif
     } else if(!strcmp(client->command, "fire")) {
         p1 = p2+1;
         //TODO check length hear
@@ -1417,7 +1418,7 @@ int main(int argc, char **argv)
 #if 1
     strcpy(server->pid_path, "/tmp/.skipd_pid");
     strcpy(server->db_path, "/jffs/db");
-    daemon = 1;
+    //daemon = 1;
 #endif
 
     while (n >= 0) {
@@ -1428,7 +1429,7 @@ int main(int argc, char **argv)
             case 'D':
                 //TODO fix me if optarg is bigger than PATH_MAX
                 //strcpy(server->pid_path, optarg);
-                daemon = 0;
+                daemon = 1;
                 break;
             case 'd':
                 strcpy(server->db_path, optarg);
