@@ -820,6 +820,7 @@ static int client_run_command(EV_P_ skipd_client* client)
                 ccrReturn(ctx, ccr_error_ok1);
             }
         }
+        end_read(EV_A_ client);
 
         //TODO remote \n from data?
         if(!strcmp(client->command, "inc")) {
