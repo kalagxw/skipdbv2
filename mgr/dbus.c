@@ -510,7 +510,7 @@ int main(int argc, char **argv, char * envp[])
             setnonblock(remote_fd);
             n1 = parse_get_result(gclient);
             if(n1 != 0) {
-                fprintf(stderr, "err n1=%d\n", n1);
+                //fprintf(stderr, "err n1=%d\n", n1);
                 exit(1);
             }
         } else if(!strcmp("remove", argv[1])) {
@@ -575,7 +575,7 @@ int main(int argc, char **argv, char * envp[])
             setnonblock(remote_fd);
             n1 = parse_get_result(gclient);
             if(n1 != 0) {
-                fprintf(stderr, "err n1=%d\n", n1);
+                //fprintf(stderr, "err n1=%d\n", n1);
                 exit(1);
             }
         } else if(!strcmp("ram", argv[1])) {

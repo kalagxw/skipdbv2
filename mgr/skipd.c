@@ -579,11 +579,11 @@ static int client_run_command(EV_P_ skipd_client* client)
         end_read(EV_A_ client);
 
         if(NULL == dvalue.data) {
-            fprintf(stderr, "get none\n");
+            //fprintf(stderr, "get none\n");
             p1 = "none\n";
             client_send(EV_A_ client, p1, strlen(p1));
         } else {
-            fprintf(stderr, "get result dvalue=%.*s\n", dvalue.size, dvalue.data);
+            //fprintf(stderr, "get result dvalue=%.*s\n", dvalue.size, dvalue.data);
             client_send(EV_A_ client, (char*)dvalue.data, dvalue.size);
         }
         ccrReturn(ctx, ccr_error_ok1);
@@ -1069,8 +1069,8 @@ static void server_open(skipd_server* server) {
     sprintf(real_path, "%s/%d", server->db_path, server->curr_db);
     server->db = SkipDB_new();
     SkipDB_setPath_(server->db, real_path);
-    //syslog(LOG_PERROR, "LOG HEAR:%s\n", server->db_path);
     SkipDB_open(server->db);
+    syslog(LOG_PERROR, "opening db:%d path:%s\n", server->curr_db, server->db_path);
 }
 
 static void server_switch(skipd_server* server) {
@@ -1084,15 +1084,15 @@ static void server_switch(skipd_server* server) {
     SkipDB_delete(other);
     SkipDB_open(other);
 
-    SkipDB_mergeInto_(server->db, other);
     SkipDB_beginTransaction(other);
+    SkipDB_mergeInto_(server->db, other);
     SkipDB_commitTransaction(other);
 
     tmp = server->db;
     sprintf(real_path, "%s/switch", server->db_path);
     sf = open(real_path, O_TRUNC | O_RDWR | O_CREAT, 0640);
     if (sf < 0) {
-        skipd_log(SKIPD_DEBUG, "cannot write swich file");
+        skipd_log(SKIPD_DEBUG, "cannot write switch file");
         exit(1);
     }
     n1 = sprintf(nbuf, "%d", n2);
@@ -1104,6 +1104,8 @@ static void server_switch(skipd_server* server) {
 
     SkipDB_delete(tmp);
     SkipDB_free(tmp);
+
+    skipd_log(SKIPD_DEBUG, "switch to new db: %d\n", n2);
 }
 
 int server_init(skipd_server* server, int max_queue) {
@@ -1152,6 +1154,10 @@ static void server_init_delay(EV_P_ skipd_server *server) {
 
     //Init hear
     skey = Datum_FromCString_("__delay__");
+    if(server->to_commit) {
+        SkipDB_commitTransaction(server->db);
+        server->to_commit = 0;
+    }
     record = SkipDB_list_first(server->db, skey, &cursor);
     while(NULL != record) {
         dkey = SkipDBRecord_keyDatum(record);
@@ -1265,7 +1271,7 @@ static void server_cmd_init(EV_P_ ev_timer *w, int revents) {
     ev_timer_stop(EV_A_ w);
 
     server_init_delay(EV_A_ server);
-    server_init_time(EV_A_ server);
+    //server_init_time(EV_A_ server);
 }
 
 static void begin_write(EV_P_ skipd_client* client) {
@@ -1418,7 +1424,7 @@ int main(int argc, char **argv)
     ev_timer_start(EV_A_ &init_watcher);
     //update at 2s after write
     ev_timer_init(EV_A_ &server->watcher, server_sync_tick, 0.0, 1.0);
-    ev_timer_start(EV_A_ &server->watcher);
+    //ev_timer_start(EV_A_ &server->watcher);
 
     // Run our loop, ostensibly forever
     ev_loop(EV_A_ 0);
@@ -1427,6 +1433,10 @@ int main(int argc, char **argv)
     //SkipDB_beginTransaction(server->db);
     //SkipDB_commitTransaction(server->db);
 
+    if(server->to_commit) {
+        SkipDB_commitTransaction(server->db);
+        server->to_commit = 0;
+    }
     SkipDB_close(server->db);
     skipd_log(SKIPD_DEBUG, "exit..\n");
 
